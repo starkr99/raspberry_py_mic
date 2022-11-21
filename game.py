@@ -40,6 +40,11 @@ while True:
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
+        # if ESC key is pressed, exit the game
+        if event.type == KEYDOWN:
+            if event.key == K_ESCAPE:
+                pygame.quit()
+                sys.exit()
 
     screen.blit(imgNormal, (0, 0))  # Grayscale image
 
