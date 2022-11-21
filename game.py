@@ -21,7 +21,7 @@ fpsClock = pygame.time.Clock()
 pygame.init()
 
 
-screen = pygame.display.set_mode((1920, 1080), pygame.FULLSCREEN)
+screen = pygame.display.set_mode((1024, 768), pygame.FULLSCREEN)
 screen.fill(WHITE)
 
 pygame.display.set_caption('Pygame Window')
@@ -32,8 +32,8 @@ font = pygame.font.SysFont('Tahoma', 60)  # 기본 폰트 및 사이즈 설정(�
 small_font = pygame.font.SysFont('Malgun Gothic', 20)  # 작은 사이즈 폰트(폰트2)
 game_over = font.render("Press R to restart", True, BLACK)  # 게임 종료시 문구
 
-imgActive = pygame.image.load('./res/imgActive.png')  # Normal Image
-imgNormal = pygame.image.load('./res/imgNormal.png')  # Grayscale image
+imgActive = pygame.image.load('./res/1024/imgActive.png')  # Normal Image
+imgNormal = pygame.image.load('./res/1024/imgNormal.png')  # Grayscale image
 
 while True:
     for event in pygame.event.get():
