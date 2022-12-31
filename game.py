@@ -1,56 +1,97 @@
-import sys
 import pygame
-from pygame.locals import *
-
-# 색상 세팅(RGB코드)
-RED = (255, 0, 0)
-ORANGE = (255, 153, 51)
-YELLOW = (255, 255, 0)
-GREEN = (0, 255, 0)
-SEAGREEN = (60, 179, 113)
-BLUE = (0, 0, 255)
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-VIOLET = (204, 153, 255)
-PINK = (255, 153, 153)
+import pyaudio
+import numpy as np
+import usb.core
+import usb.util
+from enum import Enum
 
 
-FPS = 30
-fpsClock = pygame.time.Clock()
+class EditMode(Enum):
+    NONE = 0
+    EDIT_MAX_VOLUME = 1
 
+
+SCREEN_WIDTH = 1920
+SCREEN_HEIGHT = 1080
+
+# Initialize pygame and create window
 pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+# Load images
+image1 = pygame.image.load('./res/imgNormal.png')
+image2 = pygame.image.load('./res/imgActive.png')
+
+# Set up pyaudio
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16, channels=1,
+                rate=44100, input=True, frames_per_buffer=1024)
+
+# Set maximum volume
+MAX_VOLUME = 5000
+
+SHOW_FPS = False
+
+EDIT_MODE = EditMode.NONE
+
+# FPS용
+bigfont = pygame.font.Font(None, 36)
+# EDIT모드 표시용
+smallfont = pygame.font.Font(None, 36)
+
+# ESC : 종료
+# F1 : 전체화면
+# F2 : FPS 표시
 
 
-screen = pygame.display.set_mode((800, 600), pygame.FULLSCREEN)
-screen.fill(WHITE)
+def key_down(key):
+    if key == pygame.K_ESCAPE:
+        running = False
+    # if F1 then Fullscreen toggle
+    elif key == pygame.K_F1:
+        pygame.display.toggle_fullscreen()
+    # if F2 then show FPS
+    elif key == pygame.K_F2:
+        SHOW_FPS = not SHOW_FPS
+    elif key == pygame.K_F3:
+        EDIT_MODE = EditMode.EDIT_MAX_VOLUME
 
-pygame.display.set_caption('Pygame Window')
 
+# Initialize FPS counter
+fps_counter = pygame.time.Clock()
 
-# 폰트 설정
-font = pygame.font.SysFont('Tahoma', 60)  # 기본 폰트 및 사이즈 설정(폰트1)
-small_font = pygame.font.SysFont('Malgun Gothic', 20)  # 작은 사이즈 폰트(폰트2)
-game_over = font.render("Press R to restart", True, BLACK)  # 게임 종료시 문구
-
-imgActive = pygame.image.load('./res/800/imgActive.png')  # Normal Image
-imgNormal = pygame.image.load('./res/800/imgNormal.png')  # Grayscale image
-
-while True:
+# Main loop
+running = True
+while running:
     for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        # if ESC key is pressed, exit the game
-        if event.type == KEYDOWN:
-            if event.key == K_ESCAPE:
-                pygame.quit()
-                sys.exit()
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            key_down(event.key)
 
-    screen.blit(imgNormal, (0, 0))  # Grayscale image
+    # Get volume from microphone and calculate as percentage
+    data = stream.read(1024, exception_on_overflow=False)
+    data = np.fromstring(data, np.int16)
+    volume = np.abs(data).mean()
+    print(volume)
+    volume_percent = int(100 * volume / MAX_VOLUME)
+    # Calculate image heights based on volume percentage
+    image2_height = int(SCREEN_HEIGHT * volume_percent / 100)
+    image1_height = SCREEN_HEIGHT - image2_height
+    # Display images
+    screen.blit(image1, (0, 0), pygame.Rect(0, 0, SCREEN_WIDTH, image1_height))
+    screen.blit(image2, (0, image1_height),
+                pygame.Rect(0, image1_height, SCREEN_WIDTH, image2_height))
 
-    # print fps round 0.00
-    fps = font.render(str(round(fpsClock.get_fps(), 2)), True, BLACK)
-    screen.blit(fps, (0, 0))
+    if SHOW_FPS:
+        fps = bigfont.render(
+            str(int(fps_counter.get_fps())), True, (255, 0, 0))
+        screen.blit(fps, (0, 0))
 
-    pygame.display.update()
-    fpsClock.tick(FPS)
+    pygame.display.flip()
+
+# Close pyaudio stream and terminate pygame
+stream.stop_stream()
+stream.close()
+p.terminate()
+pygame.quit()
