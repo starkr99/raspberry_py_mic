@@ -23,7 +23,7 @@ def load_settings():
         return settings_dict
     except FileNotFoundError:
         # Return default settings if file not found
-        return {'screen_width': 1920, 'screen_height': 1080, 'max_volume': 5000, 'image1Path': './res/imgNormal.png', 'image2Path': './res/imgActive.png'}
+        return {'screen_width': 1024, 'screen_height': 768, 'max_volume': 5000, 'image1Path': './res/imgNormal.png', 'image2Path': './res/imgActive.png'}
 
 
 settings = load_settings()
