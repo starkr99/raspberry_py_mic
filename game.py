@@ -128,10 +128,12 @@ while running:
                     max_volume -= 10
 
     # Get volume from microphone and calculate as percentage
-    data = stream.read(1024, exception_on_overflow=False)
-    data = np.fromstring(data, np.int16)
-    volume = np.abs(data).mean()
-    volume_percent = int(100 * volume / max_volume)
+    # data = stream.read(1024, exception_on_overflow=False)
+    # data = np.fromstring(data, np.int16)
+    # volume = np.abs(data).mean()
+    # volume_percent = int(100 * volume / max_volume)
+    volume = 999
+    volume_percent = 70
     if (ongame == True):
         # Calculate image heights based on volume percentage
         image2_height = int(SCREEN_HEIGHT * volume_percent / 100)
