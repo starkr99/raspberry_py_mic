@@ -1,1 +1,3 @@
 .venv
+printer_source/obj
+printer_source/.vs

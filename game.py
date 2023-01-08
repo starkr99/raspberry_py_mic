@@ -4,15 +4,26 @@ import numpy as np
 import usb.core
 import usb.util
 import json
+import subprocess
 from enum import Enum
 
 
-def save_settings(screen_width, screen_height, max_volume, image1Path, image2Path):
+def save_settings(screen_width, screen_height, max_volume, image1Path, image2Path, lastNum):
     settings_dict = {'screen_width': screen_width, 'screen_height': screen_height,
-                     'max_volume': max_volume, 'image1Path': image1Path, 'image2Path': image2Path}
+                     'max_volume': max_volume, 'image1Path': image1Path, 'image2Path': image2Path, 'lastNum': lastNum}
     # Save settings to a JSON file
     with open('settings.json', 'w') as f:
         json.dump(settings_dict, f)
+
+
+SCREEN_WIDTH = 1024
+SCREEN_HEIGHT = 768
+# Set maximum volume
+max_volume = 5000
+image1Path = './res/imgNormal.png'
+image2Path = './res/imgActive.png'
+
+lastNum = 0
 
 
 def load_settings():
@@ -20,28 +31,35 @@ def load_settings():
         # Load settings from a JSON file
         with open('settings.json', 'r') as f:
             settings_dict = json.load(f)
+
+        SCREEN_WIDTH = settings_dict['screen_width']
+        SCREEN_HEIGHT = settings_dict['screen_height']
+        # Set maximum volume
+        max_volume = settings_dict['max_volume']
+        image1Path = settings_dict['image1Path']
+        image2Path = settings_dict['image2Path']
+
+        lastNum = settings_dict['lastNum']
         return settings_dict
     except FileNotFoundError:
         # Return default settings if file not found
-        return {'screen_width': 1024, 'screen_height': 768, 'max_volume': 5000, 'image1Path': './res/imgNormal.png', 'image2Path': './res/imgActive.png'}
+        return {'screen_width': 1024, 'screen_height': 768, 'max_volume': 5000, 'image1Path': './res/imgNormal.png', 'image2Path': './res/imgActive.png', 'lastNum': 0}
 
 
-settings = load_settings()
+load_settings()
 
-SCREEN_WIDTH = settings['screen_width']
-SCREEN_HEIGHT = settings['screen_height']
-# Set maximum volume
-max_volume = settings['max_volume']
-image1Path = settings['image1Path']
-image2Path = settings['image2Path']
 
 # Initialize pygame and create window
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-# Load images
-image1 = pygame.image.load(image1Path)
-image2 = pygame.image.load(image2Path)
+# Load images and resize to screen size
+image1 = pygame.transform.scale(pygame.image.load(
+    image1Path), (SCREEN_WIDTH, SCREEN_HEIGHT))
+image2 = pygame.transform.scale(pygame.image.load(
+    image2Path), (SCREEN_WIDTH, SCREEN_HEIGHT))
+# image1 = pygame.image.load(image1Path)
+# image2 = pygame.image.load(image2Path)
 
 # Set up fonts
 # FPS용
@@ -106,19 +124,9 @@ while running:
                     edit_mode = (EditMode(len(EditMode) - 1)).value
             elif event.key == pygame.K_F5:
                 save_settings(SCREEN_WIDTH, SCREEN_HEIGHT,
-                              max_volume, image1Path, image2Path)
+                              max_volume, image1Path, image2Path, lastNum)
             elif event.key == pygame.K_F6:
-                settings = load_settings()
-                SCREEN_WIDTH = settings['screen_width']
-                SCREEN_HEIGHT = settings['screen_height']
-                # Set maximum volume
-                max_volume = settings['max_volume']
-                image1Path = settings['image1Path']
-                image2Path = settings['image2Path']
-                # Load images
-                image1 = pygame.image.load(image1Path)
-                image2 = pygame.image.load(image2Path)
-                screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+                load_settings()
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 if edit_mode == EditMode.EDIT_MAX_VOLUME.value:
@@ -128,12 +136,10 @@ while running:
                     max_volume -= 10
 
     # Get volume from microphone and calculate as percentage
-    # data = stream.read(1024, exception_on_overflow=False)
-    # data = np.fromstring(data, np.int16)
-    # volume = np.abs(data).mean()
-    # volume_percent = int(100 * volume / max_volume)
-    volume = 999
-    volume_percent = 70
+    data = stream.read(1024, exception_on_overflow=False)
+    data = np.fromstring(data, np.int16)
+    volume = np.abs(data).mean()
+    volume_percent = int(100 * volume / max_volume)
     if (ongame == True):
         # Calculate image heights based on volume percentage
         image2_height = int(SCREEN_HEIGHT * volume_percent / 100)
@@ -162,8 +168,14 @@ while running:
         screen.blit(edit_max_volume, (SCREEN_WIDTH -
                     edit_max_volume.get_width() - 10, 0))
 
-    if volume_percent > 100:
+    if ongame == True and volume_percent > 100:
         ongame = False
+        lastNum += 1
+        save_settings(SCREEN_WIDTH, SCREEN_HEIGHT,
+                      max_volume, image1Path, image2Path, lastNum)
+
+        subprocess.run(
+            ["printer_source\\bin\\Debug\\net6.0-windows\\PythonConnector.exe", "1", "1234567890"])
     pygame.display.flip()
 
 # Close pyaudio stream and terminate pygame
