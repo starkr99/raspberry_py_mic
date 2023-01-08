@@ -5,14 +5,16 @@ Activate venv
 ```bash
 .venv/bin/activate
 ```
+
 ```windows
 .venv/Scripts/activate
 ```
+
 Install Raspberry PI dependencies
 
 ```bash
-sudo apt-get update 
-sudo apt-get upgrade 
+sudo apt-get update
+sudo apt-get upgrade
 sudo apt-get install libhdf5-dev -y
 sudo apt-get install libhdf5-serial-dev -y
 sudo apt-get install libatlas-base-dev -y
@@ -31,6 +33,9 @@ pip install -r requirements.txt
 ```
 
 Start
+
 ```bash
 python game.py
 ```
+
+[Download printer driver and SDK, and install it.](https://www.bixolon.com/download_view.php?idx=149#download-anchor05)
